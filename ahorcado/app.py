@@ -42,4 +42,4 @@ if __name__ == '__main__':
     else:
         main(archivo)
 
-    #xd
+    #xd2
