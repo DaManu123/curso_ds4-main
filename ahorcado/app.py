@@ -41,3 +41,5 @@ if __name__ == '__main__':
         print(f'El archivo {archivo} no existe')
     else:
         main(archivo)
+
+    #xd
