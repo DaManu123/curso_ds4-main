@@ -5,16 +5,33 @@ from Sport import Sport
 from Team import Team
 from Game import Game
 
-def add_team_to_score(team:str, score:dict):
+
+def add_team_to_score(team: str, score: dict):
     ''' Agrega un equipo al diccionario de puntuación '''
     if team not in score:
         score[team] = {
-            'G':0,
-            'E':0,
-            'P':0
+            'G': 0,
+            'E': 0,
+            'P': 0
         }
 
-def scoring(torneo:list)->dict:
+
+def play_game(torneo: dict):
+    for juego in torneo:
+        A = Team(juego['A']['name'],
+                 Sport(juego['A']['sport']['name'], juego['A']['sport']['players'], juego['A']['sport']['league']),
+                 [Athlete(x['name']) for x in juego['A']['players']])
+        B = Team(juego['B']['name'],
+                 Sport(juego['B']['sport']['name'], juego['B']['sport']['players'], juego['B']['sport']['league']),
+                 [Athlete(x['name']) for x in juego['B']['players']])
+        game = Game(A, B)
+        game.play()
+        print(game)
+        juego['score'] = game.score
+        print("----------------")
+
+
+def scoring(torneo: list) -> dict:
     ''' Puntuación de juegos'''
     tablero = {}
     for juego in torneo:
@@ -40,7 +57,8 @@ def scoring(torneo:list)->dict:
             tablero[equipo_visitante]['E'] += 1
     return tablero
 
-def display_tablero(tablero:dict):
+
+def display_tablero(tablero: dict):
     ''' Muestra el tablero de puntuación '''
     print("----------------")
     for equipo, puntaje in tablero.items():
@@ -51,35 +69,70 @@ def display_tablero(tablero:dict):
     for i, (equipo, puntaje) in enumerate(tabla, 1):
         print(f"{i}. {equipo}: {puntaje['G']}G {puntaje['E']}E {puntaje['P']}P")
 
-def json_to_game(json_game:dict)->Game:
+
+def json_to_game(json_game: dict) -> Game:
     ''' Convierte un diccionario en un objeto Game '''
-    A = Team(json_game['A']['name'], 
-             Sport(json_game['A']['sport']['name'], 
-                   json_game['A']['sport']['players'],
-                   json_game['A']['sport']['league']), 
-            [Athlete(x['name']) for x in json_game['A']['players']])
-    B = Team(json_game['B']['name'],
-             Sport(json_game['B']['sport']['name'],
-                   json_game['B']['sport']['players'],
-                   json_game['B']['sport']['league']),
-            [Athlete(x['name']) for x in json_game['B']['players']])
+    A = Team(json_game['A']['name'], Sport(json_game['A']['sport']['name'], json_game['A']['sport']['players'],
+                                           json_game['A']['sport']['league']),
+             [Athlete(x['name']) for x in json_game['A']['players']])
+    B = Team(json_game['B']['name'], Sport(json_game['B']['sport']['name'], json_game['B']['sport']['players'],
+                                           json_game['B']['sport']['league']),
+             [Athlete(x['name']) for x in json_game['B']['players']])
     game = Game(A, B)
     game.score = json_game['score']
     return game
 
-def json_to_tournament(torneo:dict)->list:
-    ''' Convierte un torneo en una lista de juegos '''
-    return [json_to_game(juego) for juego in torneo]
+
+def json_to_tournament(torne: dict) -> list:
+    ''' Convierte un diccionario en una lista de juegos '''
+    return [json_to_game(juego) for juego in torne]
+
+
+def create_gamefile():
+    '''crea un archivo de juego'''
+    players_mexico = ['Chicarito', 'Chucky', 'Ochoa', 'Tecatito', 'Guardado', 'Herrera', 'Layun', 'Moreno', 'Araujo',
+                      'Oribe', 'Gimenez']
+    players_espania = ['Casillas', 'Ramos', 'Pique', 'Iniesta', 'Silva', 'Isco', 'Busquets', 'Costa', 'Morata',
+                       'Asensio', 'Pedri']
+    players_brasil = ['Neymar', 'Coutinho', ' Mercelo', 'Casemiro', 'Alisson', 'Jesus', ' Paulinho', 'Thiago', 'Silva',
+                      'Fermino', 'Danilo']
+    players_argentina = ['Messi', 'Aguero', 'DiMaria', ' Mascherano', 'Higuain', 'Dybala', 'Otamendi', 'Romero',
+                         'Riquelme', 'Dibu', 'Kempes']
+    lista_mexico = [Athlete(x) for x in players_mexico]
+    lista_espania = [Athlete(x) for x in players_espania]
+    lista_brasil = [Athlete(x) for x in players_brasil]
+    lista_argentina = [Athlete(x) for x in players_argentina]
+    soccer = Sport("Soccer", 11, "FIFA")
+    mexico = Team("Mexico", soccer, lista_mexico)
+    espania = Team("Espania", soccer, lista_espania)
+    brasil = Team("Brasil", soccer, lista_brasil)
+    argentina = Team("Argentina", soccer, lista_argentina)
+    equipos = [mexico, espania, brasil, argentina]
+    d = {}
+    for local in equipos:
+        for visitante in equipos:
+            if local != visitante:
+                juego = Game(local, visitante)
+                partido = f'{local} - {visitante}'
+                partido_2 = f'{visitante} - {local}'
+                if partido_2 not in d:
+                    d[partido] = juego.to_json()
+
+    torneo = list(d.values())
+    archivo_torneo = "torneo.json"
+    with open(archivo_torneo, "w", encoding='utf8') as f:
+        json.dump(torneo, f, ensure_ascii=False, indent=4)
+
+    print(f"Se escribio archivo '{archivo_torneo}'satisfactoriamente")
+
 
 if __name__ == "__main__":
     archivo = "torneo.json"
     with open(archivo, "r") as f:
         torneo = json.load(f)
-    #print(torneo)
     tournament = json_to_tournament(torneo)
     for game in tournament:
         game.play()
     torneo = [game.to_json() for game in tournament]
     tablero = scoring(torneo)
-    #print(tablero)
     display_tablero(tablero)
